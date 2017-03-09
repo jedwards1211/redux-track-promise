@@ -1,7 +1,7 @@
 {
-  "name": "es2015-library-skeleton",
+  "name": "redux-track-promise",
   "version": "0.0.0-development",
-  "description": "my personal ES2015 library project skeleton",
+  "description": "sync the state of promises into redux state",
   "main": "lib/index.js",
   "scripts": {
     "lint": "eslint src test",
@@ -40,7 +40,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/jedwards1211/es2015-library-skeleton.git"
+    "url": "https://github.com/jedwards1211/redux-track-promise.git"
   },
   "keywords": [
     "es2015"
@@ -48,9 +48,9 @@
   "author": "Andy Edwards",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/jedwards1211/es2015-library-skeleton/issues"
+    "url": "https://github.com/jedwards1211/redux-track-promise/issues"
   },
-  "homepage": "https://github.com/jedwards1211/es2015-library-skeleton#readme",
+  "homepage": "https://github.com/jedwards1211/redux-track-promise#readme",
   "devDependencies": {
     "@jedwards1211/eslint-config": "^1.0.0",
     "@jedwards1211/eslint-config-flow": "^1.0.0",
