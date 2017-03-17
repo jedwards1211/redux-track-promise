@@ -8,6 +8,9 @@
 A tiny redux library with a reducer that handles `setPending`, `resolve`, and `reject` actions, and a `trackPromise`
 method that takes a `Promise` and dispatches those actions when the promise state changes.
 
+I used to write a lot of similar reducers and action creators for keeping track of asynchronous operations, but I got
+tired of repeating myself and wrote this library to use in all of those cases.
+
 ## Getting started
 
 ### `npm install redux-track-promise`
@@ -181,7 +184,7 @@ function setPassword(username, oldPassword, newPassword) {
 }
 ```
 
-### The fourth (initial) state
+## The fourth (initial) state
 
 Unlike promises, which can be in one of three states (pending, fulfilled, or rejected), the initial redux state can be
 none of the above:
@@ -201,14 +204,7 @@ You can manually return to this state if you want by dispatching `setPending(fal
 are displaying pending/fulfilled/rejected status in the UI and want to make it go away (for example, if the user clicks
 the X on your status banner).
 
-## Keep it DRY!
-
-Over the years I've written separate action creators and reducers for tracking HTTP requests, subscriptions, and
-remote procedure calls, and eventually I got tired of repeating myself.  Each of these are basically in one of the
-three promise states: pending, fulfilled, or rejected.  So I created this library to use in each of those situations
-so I wouldn't repeat myself.
-
-### How to rename all action types, action creators, and state fields
+## How to rename all action types, action creators, and state fields
 
 Let's say you want to track the state of a Meteor subscription.  Using this library makes total sense: `pending`
 can mean the subscription is sending initial data, `fulfilled` can mean it's ready, and `rejected` can mean it stopped.
