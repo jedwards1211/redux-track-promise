@@ -1,4 +1,41 @@
 // @flow
 
+declare export var SET_PENDING: string
+declare export var RESOLVE: string
+declare export var REJECT: string
 
-declare module.exports: {};
+export type PromiseState<R> = {
+  pending: boolean,
+  fulfilled: boolean,
+  rejected: boolean,
+  value: ?R,
+  reason: ?any,
+}
+
+export type PromiseActionCreators<R> = {
+  setPending(pending?: boolean): {type: string},
+  resolve(result?: R): {type: string, payload: ?R},
+  reject(reason: any): {type: string, payload: any, error: boolean},
+}
+
+type Action = {type: $Subtype<string>}
+
+export type PromiseReducer<R> = (state: ?PromiseState<R>, action: Action) => PromiseState<R>
+
+declare export function promiseActionCreators<R>(customizeActionType?: (actionType: string) => string): PromiseActionCreators<R>
+
+declare export function promiseReducer<R, T>(actionCreators?: PromiseActionCreators<R>): PromiseReducer<T>
+
+type TrackOptions<R> = {
+  actionCreators: PromiseActionCreators<R>,
+  dispatch?: (action: Action) => any,
+}
+
+type TrackResult = {cancel: () => void}
+
+declare export function trackPromise<R>(promise: Promise<R>, options: TrackOptions<R>): TrackResult
+
+declare export function createPromiseTracker<R>(
+  options: $Shape<TrackOptions<R> & {ignoreOldPromises: boolean}>
+): (promise: Promise<R>, options: $Shape<TrackOptions<R>>) => TrackResult
+

@@ -43,7 +43,10 @@
     "url": "https://github.com/jedwards1211/redux-track-promise.git"
   },
   "keywords": [
-    "es2015"
+    "redux",
+    "reusable-reducer",
+    "promise",
+    "asynchronous"
   ],
   "author": "Andy Edwards",
   "license": "MIT",
@@ -76,8 +79,10 @@
     "istanbul": "^0.4.5",
     "mocha": "^3.2.0",
     "nyc": "^10.1.2",
+    "redux": "^3.6.0",
     "rimraf": "^2.5.4",
     "semantic-release": "^6.3.6",
+    "sinon": "^1.17.7",
     "validate-commit-msg": "^2.8.2"
   },
   "dependencies": {}
