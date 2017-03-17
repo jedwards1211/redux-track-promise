@@ -19,10 +19,11 @@ export function promiseReducer(actionCreators = promiseActionCreators()) {
   const MY_RESOLVE = actionCreators.resolve().type
   const MY_REJECT = actionCreators.reject().type
 
-  return function scopedPromiseReducer(state, action) {
+  return (state, action) => {
     const {type, payload} = action
 
     // ignore irrelevant actions
+    // the && state check ensures that this will fall through and return the initial state if it's undefined
     if (type !== MY_SET_PENDING && type !== MY_RESOLVE && type !== MY_REJECT && state) return state
 
     return {
