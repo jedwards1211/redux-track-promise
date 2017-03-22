@@ -73,7 +73,7 @@
     "eslint": "^3.13.1",
     "eslint-plugin-flowtype": "^2.30.0",
     "eslint-watch": "^3.0.0",
-    "flow-bin": "^0.39.0",
+    "flow-bin": "^0.41.0",
     "flow-watch": "^1.1.0",
     "husky": "^0.13.1",
     "istanbul": "^0.4.5",
@@ -82,7 +82,7 @@
     "redux": "^3.6.0",
     "rimraf": "^2.5.4",
     "semantic-release": "^6.3.6",
-    "sinon": "^1.17.7",
+    "sinon": "^2.0.0",
     "validate-commit-msg": "^2.8.2"
   },
   "dependencies": {}
