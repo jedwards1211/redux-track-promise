@@ -36,6 +36,8 @@ export function promiseReducer(actionCreators = promiseActionCreators()) {
   }
 }
 
+export const initialPromiseState = promiseReducer()(undefined, {type: ''})
+
 // didn't feel like making redux a peer dependency
 function bindActionCreators({setPending, resolve, reject}, dispatch) {
   return {

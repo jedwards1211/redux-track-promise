@@ -22,6 +22,8 @@ type Action = {type: $Subtype<string>}
 
 export type PromiseReducer<V, R> = (state: ?PromiseState<V, R>, action: Action) => PromiseState<V, R>
 
+declare export var initialPromiseState: PromiseState<any, any>
+
 declare export function promiseActionCreators<V, R>(customizeActionType?: (actionType: string) => string): PromiseActionCreators<V, R>
 
 declare export function promiseReducer<V, R>(actionCreators?: PromiseActionCreators<V, R>): PromiseReducer<V, R>

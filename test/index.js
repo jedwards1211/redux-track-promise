@@ -8,6 +8,7 @@ import {createStore, bindActionCreators} from 'redux'
 import {
   promiseReducer, promiseActionCreators, trackPromise, createPromiseTracker,
   SET_PENDING, RESOLVE, REJECT,
+  initialPromiseState,
 } from '../src'
 import sinon from 'sinon'
 
@@ -16,6 +17,17 @@ beforeEach(() => clock = sinon.useFakeTimers())
 afterEach(() => clock.restore())
 
 describe('without typePrefix', () => {
+  describe('initialPromiseState', () => {
+    it('is correct', () => {
+      expect(initialPromiseState).to.deep.equal({
+        pending: false,
+        fulfilled: false,
+        rejected: false,
+        value: null,
+        reason: null,
+      })
+    })
+  })
   describe('promiseReducer', () => {
     it("ignores irrelevant actions", () => {
       const state = {
