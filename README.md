@@ -55,6 +55,8 @@ gets resolved or rejected.
 Likewise, `trackSetPasswordPromise` will dispatch `SET_PASSWORD_PROMISE.*` actions that update
 `state.setPasswordPromise`.
 
+## UI Integration
+
 Displaying the status of the requests is easy!  You can create a generic `PromiseStatus` component that
 provides a consistent UI for anywhere in your app you're displaying the status of a promise:
 
