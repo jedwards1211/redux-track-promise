@@ -33,7 +33,11 @@ const reducer = combineReducers({
   setPasswordPromise: setPasswordPromiseReducer,
 })
 const store = createStore(reducer)
+```
 
+Then whenever you make an HTTPS request, call one of your `track*Promise` functions to sync that promise into redux:
+
+```js
 trackLoginPromise(
   popsicle.post('/login', {username: 'jimbob', password: 'trump2024'}),
   store.dispatch
@@ -47,10 +51,11 @@ trackSetPasswordPromise(
 Calling `trackLoginPromise` will dispatch a `LOGIN_PROMISE.SET_PENDING` that will update `state.loginPromise`.
 Then later it will dispatch a `LOGIN_PROMISE.RESOLVE` or `LOGIN_PROMISE.REJECT` action, depending on whether the promise
 gets resolved or rejected.
+
 Likewise, `trackSetPasswordPromise` will dispatch `SET_PASSWORD_PROMISE.*` actions that update
 `state.setPasswordPromise`.
 
-With this, displaying the status of the requests is easy!  You can create a generic `PromiseStatus` component that
+Displaying the status of the requests is easy!  You can create a generic `PromiseStatus` component that
 provides a consistent UI for anywhere in your app you're displaying the status of a promise:
 
 ```js
