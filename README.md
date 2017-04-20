@@ -44,8 +44,14 @@ trackSetPasswordPromise(
 )
 ```
 
-Then displaying the status of the requests is easy!  You can create a generic `PromiseStatus` component that provides
-a consistent UI for anywhere in your app you're displaying the status of a promise:
+Calling `trackLoginPromise` will dispatch a `LOGIN_PROMISE.SET_PENDING` that will update `state.loginPromise`.
+Then later it will dispatch a `LOGIN_PROMISE.RESOLVE` or `LOGIN_PROMISE.REJECT` action, depending on whether the promise
+gets resolved or rejected.
+Likewise, `trackSetPasswordPromise` will dispatch `SET_PASSWORD_PROMISE.*` actions that update
+`state.setPasswordPromise`.
+
+With this, displaying the status of the requests is easy!  You can create a generic `PromiseStatus` component that
+provides a consistent UI for anywhere in your app you're displaying the status of a promise:
 
 ```js
 import React from 'react'
@@ -80,7 +86,7 @@ const LoginView = connect(state => state.loginView)(({username, password, dispat
   </form>
 ))
 
-const SetPasswordStatus = connect(state => state.setPasswordPromise(PromiseStatus({
+const SetPasswordStatus = connect(state => state.setPasswordPromise)(PromiseStatus({
   pending: 'Changing password...',
   fulfilled: 'Your password has been changed!',
   rejected: 'Failed to change your password',
@@ -177,6 +183,16 @@ login(
 (Of course, you could just use `es6-promisify` on a method that takes a callback and pass its promise to
 `trackPromise`.  You may prefer to dispatch actions manually if your async operation involves more than a single
 function call.)
+
+## Resetting to initial, no promise state
+
+You might want to hide any pending/resolved/rejected status in your UI altogether.
+To do that, dispatch `setPending(false)`:
+
+```js
+const {setPending} = createReduxTrackPromise(...)
+dispatch(setPending(false))
+```
 
 ## How to rename all action types, action creators, and state fields
 
