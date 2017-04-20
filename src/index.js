@@ -2,24 +2,25 @@ export const SET_PENDING = 'SET_PENDING'
 export const RESOLVE = 'RESOLVE'
 export const REJECT = 'REJECT'
 
-export function promiseActionCreators(customizeActionType = actionType => actionType) {
+export default function createReduxTrackPromise(customizeActionType = actionType => actionType) {
   const MY_SET_PENDING = customizeActionType(SET_PENDING)
   const MY_RESOLVE = customizeActionType(RESOLVE)
   const MY_REJECT = customizeActionType(REJECT)
 
-  return {
-    setPending: (pending = true) => ({type: MY_SET_PENDING, payload: pending}),
-    resolve: (result) => ({type: MY_RESOLVE, payload: result}),
-    reject: (reason) => ({type: MY_REJECT, payload: reason, error: true}),
+  let currentPromise = null
+
+  const setPending = (pending = true) => ({type: MY_SET_PENDING, payload: pending})
+  const resolve = (result) => ({type: MY_RESOLVE, payload: result})
+  const reject = (reason) => ({type: MY_REJECT, payload: reason, error: true})
+  const track = (promise, dispatch) => {
+    currentPromise = promise
+    dispatch(setPending())
+    return promise.then(
+      value => { if (currentPromise === promise) dispatch(resolve(value)) },
+      reason => { if (currentPromise === promise) dispatch(reject(reason)) }
+    )
   }
-}
-
-export function promiseReducer(actionCreators = promiseActionCreators()) {
-  const MY_SET_PENDING = actionCreators.setPending().type
-  const MY_RESOLVE = actionCreators.resolve().type
-  const MY_REJECT = actionCreators.reject().type
-
-  return (state, action) => {
+  const reducer = (state, action) => {
     const {type, payload} = action
 
     // ignore irrelevant actions
@@ -34,41 +35,9 @@ export function promiseReducer(actionCreators = promiseActionCreators()) {
       reason: type === MY_REJECT ? payload : null,
     }
   }
+
+  return {setPending, resolve, reject, track, reducer}
 }
 
-export const initialPromiseState = promiseReducer()(undefined, {type: ''})
-
-// didn't feel like making redux a peer dependency
-function bindActionCreators({setPending, resolve, reject}, dispatch) {
-  return {
-    setPending: (pending) => dispatch(setPending(pending)),
-    resolve: (result) => dispatch(resolve(result)),
-    reject: (reason) => dispatch(reject(reason)),
-  }
-}
-
-export function trackPromise(promise, {dispatch, actionCreators}) {
-  // bind the action creators to dispatch if given; otherwise assume they're already bound
-  const {setPending, resolve, reject} = dispatch ? bindActionCreators(actionCreators, dispatch) : actionCreators
-  setPending()
-  let canceled = false
-  promise.then(
-    value => canceled || resolve(value),
-    reason => canceled || reject(reason)
-  )
-  return {
-    cancel: () => canceled = true,
-  }
-}
-
-export function createPromiseTracker({dispatch, actionCreators, ignoreOldPromises}) {
-  let lastResult
-  return (promise, options = {}) => {
-    if (ignoreOldPromises && lastResult) lastResult.cancel()
-    return lastResult = trackPromise(promise, {
-      dispatch: options.dispatch || dispatch,
-      actionCreators: options.actionCreators || actionCreators,
-    })
-  }
-}
+export const initialPromiseState = createReduxTrackPromise().reducer(undefined, {type: ''})
 

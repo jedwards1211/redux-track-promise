@@ -13,221 +13,109 @@ method that takes a `Promise` and dispatches those actions when the promise stat
 I used to write a lot of similar reducers and action creators for keeping track of asynchronous operations, but I got
 tired of repeating myself and wrote this library to use in all of those cases.
 
-## TL;DR
+## Quickstart
 
-Let's say you want to keep track of the status of an HTTPS login request in redux.  Here's all it takes to set that
-up:
+Let's say you want to track the status of some HTTPS requests your redux state.  Here's all it takes to set that up:
+
 ```js
 import {createStore, combineReducers} from 'redux'
-import {promiseActionCreators, promiseReducer, createPromiseTracker} from 'redux-track-promise'
+import createReduxTrackPromise from 'redux-track-promise'
 import popsicle from 'popsicle'
 
-const loginPromiseActionCreators = promiseActionCreators(actionType => `LOGIN_PROMISE.${actionType})
+const {track: trackLoginPromise, reducer: loginPromiseReducer} =
+  createReduxTrackPromise(actionType => `LOGIN_PROMISE.${actionType}`)
 
-const reducer = combineReducers({
-  loginPromise: promiseReducer(loginPromiseActionCreators)
-})
-const store = createStore(reducer)
+const {track: trackSetPasswordPromise, reducer: setPasswordPromiseReducer} =
+  createReduxTrackPromise(actionType => `SET_PASSWORD.${actionType}`)
 
-const trackLoginPromise = createPromiseTracker({
-  dispatch: store.dispatch,
-  actionCreators: loginPromiseActionCreators,
-})
-
-trackLoginPromise(popsicle.post('/login', {username: 'jimbob', password: 'trump2024'}))
-```
-
-Then displaying the status of the login request is easy!
-```js
-import React from 'react'
-import {connect} from 'react-redux'
-
-const LoginStatus = connect(state => state.loginPromise)(({pending, fulfilled, rejected, reason}) => {
-  if (pending) return <div className="alert alert-info"><span className="spinner"> Logging in...</div>
-  if (fulfilled) return <div className="alert alert-success">Logged in!</div>
-  if (rejected) return <div className="alert alert-danger">Login failed: {reason.message}</div>
-  return <span />
-})
-```
-
-## Getting started
-
-### `npm install redux-track-promise`
-
-### Import stuff
-
-```js
-import {promiseActionCreators, promiseReducer, createPromiseTracker} from 'redux-track-promise'
-```
-
-### Customize action types
-
-Let's say you want to track promises from calling two HTTP routes: a login route and a setPassword route.
-Create functions that customize `redux-track-promise`'s action types for both routes:
-```js
-const loginPromiseActionType = actionType => `LOGIN_PROMISE.${actionType}`
-const setPasswordPromiseActionType = actionType => `SET_PASSWORD_PROMISE.${actionType}`
-```
-
-### Create promise action creators
-
-Call `promiseActionCreators` with your custom action type functions from the previous step:
-```js
-const loginPromiseActionCreators = promiseActionCreators(loginPromiseActionType)
-const setPasswordPromiseActionCreators = promiseActionCreators(setPasswordPromiseActionType)
-```
-
-### Create promise reducers
-
-Call `promiseReducer` with your action creators from the previous step (this tells it which action types to respond to):
-```js
-const loginPromiseReducer = promiseReducer(loginPromiseActionCreators)
-const setPasswordPromiseReducer = promiseReducer(setPasswordPromiseActionCreators)
-```
-
-### Hook promise reducers into your app reducer
-
-Let's say you're using `combineReducers` to make your app reducer.
-```js
 const reducer = combineReducers({
   loginPromise: loginPromiseReducer,
   setPasswordPromise: setPasswordPromiseReducer,
 })
-
 const store = createStore(reducer)
+
+trackLoginPromise(
+  popsicle.post('/login', {username: 'jimbob', password: 'trump2024'}),
+  store.dispatch
+)
+trackSetPasswordPromise(
+  popsicle.post('/setPassword', {username: 'jimbob', oldPassword: 'trump2024', password: 'lordcuckifer'}),
+  store.dispatch
+)
 ```
 
-### Create promise tracker functions
+Then displaying the status of the requests is easy!  You can create a generic `PromiseStatus` component that provides
+a consistent UI for anywhere in your app you're displaying the status of a promise:
 
 ```js
-const trackLoginPromise = createPromiseTracker({
-  dispatch: store.dispatch,
-  actionCreators: loginPromiseActionCreators,
-})
-const trackSetPasswordPromise = createPromiseTracker({
-  dispatch: store.dispatch,
-  actionCreators: setPasswordPromiseActionCreators,
-})
-```
+import React from 'react'
+import {connect} from 'react-redux'
 
-You can omit `dispatch` and pass `actionCreators` that are bound to a dispatch function via `bindActionCreators`.
-As with `bindActionCreators`, if you're using `react-redux`, `mapDispatchToProps` is a good place to use
-`createPromiseTracker`.
-
-### Call promise tracker to sync a promise into redux
-
-```js
-const promise = popsicle.post('/login', {username: 'jimbob', password: 'trump2024'})
-trackLoginPromise(promise)
-```
-
-Alternatively, you can `import {trackPromise} from 'redux-track-promise'` and call it with `dispatch` and
-`actionCreators`:
-```js
-import {trackPromise} from 'redux-track-promise'
-trackPromise(promise, {dispatch: store.dispatch, actionCreators: setPasswordPromiseActionCreators})
-```
-Again, you can omit `dispatch` and pass `actionCreators` that are bound to a dispatch function via `bindActionCreators`.
-
-#### Results
-Right after you call `trackLoginPromise`, the state will look like this:
-```js
-{
-  loginPromise: {
-    pending: true,
-    fulfilled: false,
-    rejected: false,
-    value: null,
-    reason: null,
-  },
-  setPasswordPromise: {
-    pending: false,
-    fulfilled: false,
-    rejected: false,
-    value: null,
-    reason: null,
-  }
-}
-```
-Then say `promise` resolves to `{token: 'C4|\|7 |-|4C|< 7|-||5', expiresAt: '2025-01-20'}`.  Then the state will
-look like this:
-```js
-{
-  loginPromise: {
-    pending: false,
-    fulfilled: true,
-    rejected: false,
-    value: {token: 'C4|\|7 |-|4C|< 7|-||5', expiresAt: '2025-01-20'},
-    reason: null,
-  },
-  setPasswordPromise: {
-    pending: false,
-    fulfilled: false,
-    rejected: false,
-    value: null,
-    reason: null,
-  }
+const PromiseStatus = messages => ({pending, fulfilled, rejected}) => {
+  if (pending) return <div className="alert alert-info"><span className="spinner"> {messages.pending}</div>
+  if (fulfilled) return <div className="alert alert-success">{messages.fulfilled}</div>
+  if (rejected) return <div className="alert alert-danger">{messages.rejected} {reason.message}</div>
+  return <span />
 }
 ```
 
-### Or dispatch actions manually
+Then customize it, connect it to the promise state, and use it in your views like this:
 
 ```js
-const {setPending, resolve, reject} = loginPromiseActionCreators
+const LoginStatus = connect(state => state.loginPromise)(PromiseStatus({
+  pending: 'Logging in...',
+  fulfilled: 'Logged In',
+  rejected: 'Login failed: ',
+}))
 
-dispatch(setPending)
-login(username, password, (error, result) => {
-  if (error) return dispatch(reject(error))
-  dispatch(resolve(result))
-})
+const LoginView = connect(state => state.loginView)(({username, password, dispatch}) => (
+  <form
+      onSubmit={e => {
+        e.preventDefault()
+        trackLoginPromise(popsicle.post('/login', {username, password}), dispatch)
+      }}
+  >
+    <LoginStatus />
+    ...
+  </form>
+))
+
+const SetPasswordStatus = connect(state => state.setPasswordPromise(PromiseStatus({
+  pending: 'Changing password...',
+  fulfilled: 'Your password has been changed!',
+  rejected: 'Failed to change your password',
+}))
+
+const SetPasswordView = connect(state => ({...state.changePasswordView, username: state.username}))(
+  ({username, oldPassword, newPassword, repeatNewPassword}) => (
+    <form
+        onSubmit={e => {
+          e.preventDefault()
+          trackSetPasswordPromise(popsicle.post('/setPassword', {username, oldPassword, newPassword}), store.dispatch)
+        }}
+    >
+      <SetPasswordStatus />
+      ...
+    </form>
+  )
+)
 ```
 
-(Of course, you could just use `es6-promisify` on a method that takes a callback and pass its promise to
-`trackPromise`.  You may prefer to dispatch actions manually if your async operation involves more than a single
-function call.)
+## What the state looks like
 
-### What if you need to track a new promise before an old one finishes?
-
-If the old promise finishes after the new one, you wouldn't want its outcome to overwrite the new promise's outcome!
-Got you covered -- `trackPromise` returns an object with a `cancel` function.  Calling it will prevent it from
-dispatching `resolve` or `reject` if it hasn't already:
-```js
-let loginTracker
-function login(username, password) {
- if (loginTracker) loginTracker.cancel() // ignore last promise
- const promise = popsicle.post('/login', {username: 'jimbob', password: 'trump2024'})
- loginTracker = trackLoginPromise(promise)
-}
-```
-
-Or you can pass the `ignoreOldPromises` option to `createPromiseTracker`:
-```js
-const trackLoginPromise = createPromiseTracker({
-  dispatch: store.dispatch,
-  actionCreators: loginPromiseActionCreators,
-  ignoreOldPromises: true
-})
-const trackSetPasswordPromise = createMostRecentPromiseTracker({
-  dispatch: store.dispatch,
-  actionCreators: setPasswordPromiseActionCreators,
-  ignoreOldPromises: true
-})
-
-function login(username, password) {
-  const promise = popsicle.post('/login', {username, password})
-  trackLoginPromise(promise)
-}
-function setPassword(username, oldPassword, newPassword) {
-  const promise = popsicle.post('/setPassword', {username, oldPassword, newPassword})
-  trackSetPasswordPromise(promise)
-}
-```
-
-## The fourth (initial) state
-
-Unlike promises, which can be in one of three states (pending, fulfilled, or rejected), the initial redux state can be
-none of the above.  You can think of this as the "no promise" state.
-```js
+<table>
+  <thead>
+    <tr>
+      <th>Initial (no promise)</th>
+      <th>Pending</th>
+      <th>Fulfilled</th>
+      <th>Rejected</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <div class="highlight highlight-source-js"><pre>
 {
   pending: false,
   fulfilled: false,
@@ -235,13 +123,60 @@ none of the above.  You can think of this as the "no promise" state.
   value: null,
   reason: null,
 }
-```
-This is so that the state won't indicate some operation is pending before you've ever called `setPending`
-(or `trackPromise`).
+        </pre></div>
+      </td>
+      <td>
+        <div class="highlight highlight-source-js"><pre>
+{
+  pending: true,
+  fulfilled: false,
+  rejected: false,
+  value: null,
+  reason: null,
+}
+        </pre></div>
+      </td>
+      <td>
+        <div class="highlight highlight-source-js"><pre>
+{
+  pending: false,
+  fulfilled: true,
+  rejected: false,
+  value: {...},
+  reason: null,
+}
+        </pre></div>
+      </td>
+      <td>
+        <div class="highlight highlight-source-js"><pre>
+{
+  pending: false,
+  fulfilled: false,
+  rejected: true,
+  value: null,
+  reason: Error(...),
+}
+        </pre></div>
+      </td>
+    </tr>
+  </tbody>
+</table>
 
-You can manually return to this state if you want by dispatching `setPending(false)`.  You might want to do this if you
-are displaying pending/fulfilled/rejected status in the UI and want to make it go away (for example, if the user clicks
-the X on your status banner).
+## Dispatching actions manually
+
+```js
+const {setPending, resolve, reject} = createReduxTrackPromise(actionType => `LOGIN_PROMISE.${actionType}`)
+
+dispatch(setPending)
+login(
+  username, password,
+  (error, result) => dispatch(error ? reject(error) : resolve(result))
+)
+```
+
+(Of course, you could just use `es6-promisify` on a method that takes a callback and pass its promise to
+`trackPromise`.  You may prefer to dispatch actions manually if your async operation involves more than a single
+function call.)
 
 ## How to rename all action types, action creators, and state fields
 
@@ -252,34 +187,29 @@ But what if you want the names of these fields and the action types to match Met
 Here's how you could do it:
 
 ```js
-const subscriptionActionTypes = {
-  [SET_PENDING]: 'SET_INITIALIZING',
-  [RESOLVE]: 'SET_READY',
-  [REJECT]: 'SET_STOPPED',
-}
-
-function subscriptionActions(customizeActionType = actionType => actionType) {
-  const {setPending, resolve, reject} = promiseActions(
+function createTrackSubscriptionPromise(customizeActionType = actionType => actionType) {
+  const {setPending, resolve, reject, track, reducer} = create(
     actionType => customizeActionType(subscriptionActionTypes[actionType])
   )
-  return {setInitializing: setPending, setReady: resolve, setStopped: reject}
-}
-
-function subscriptionReducer(actions) {
-  const {setInitializing, setReady, setStopped} = actions
-  const wrappedReducer = promiseReducer({setPending: setInitializing, resolve: setReady, reject: setStopped})
-  return (state, action) => {
-    const {pending, fulfilled, rejected, reason} = wrappedReducer(state, action)
-    return {
-      initializing: pending,
-      ready: fulfilled,
-      stopped: rejected,
-      error: reason,
-    }
+  return {
+    setInitializing: setPending,
+    setReady: resolve,
+    setStopped: reject,
+    track,
+    reducer: (state, action) => {
+      const {pending, fulfilled, rejected, reason} = reducer(state, action)
+      return {
+        initializing: pending,
+        ready: fulfilled,
+        stopped: rejected,
+        error: reason,
+      }
+    },
   }
 }
 
-const {setInitializing, setReady, setStopped}  = subscriptionActions(actionType => `@@test/${actionType}`)
+const {setInitializing, setReady, setStopped, reducer} = createTrackSubscriptionPromise(actionType => `@@test/${actionType}`)
+
 dispatch(setReady())
 
 // now state is {initializing: false, ready: true, stopped: false, error: null}

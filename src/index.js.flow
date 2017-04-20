@@ -12,32 +12,17 @@ export type PromiseState<V, R> = {
   reason: ?R,
 }
 
-export type PromiseActionCreators<V, R> = {
-  setPending(pending?: boolean): {type: string},
-  resolve(result?: V): {type: string, payload: ?V},
-  reject(reason?: R): {type: string, payload: ?R, error: boolean},
-}
-
 type Action = {type: $Subtype<string>}
 
 export type PromiseReducer<V, R> = (state: ?PromiseState<V, R>, action: Action) => PromiseState<V, R>
 
 declare export var initialPromiseState: PromiseState<any, any>
 
-declare export function promiseActionCreators<V, R>(customizeActionType?: (actionType: string) => string): PromiseActionCreators<V, R>
-
-declare export function promiseReducer<V, R>(actionCreators?: PromiseActionCreators<V, R>): PromiseReducer<V, R>
-
-type TrackOptions<V, R> = {
-  actionCreators: PromiseActionCreators<V, R>,
-  dispatch?: (action: Action) => any,
+declare export default function createReduxTrackPromise<V, R>(customizeActionType?: (actionType: string) => string): {
+  setPending(pending?: boolean): {type: string},
+  resolve(result?: V): {type: string, payload: ?V},
+  reject(reason?: R): {type: string, payload: ?R, error: boolean},
+  track(promise: Promise<V>, dispatch: (action: Action) => any): Promise<V>,
+  reducer: PromiseReducer<V, R>,
 }
-
-type TrackResult = {cancel: () => void}
-
-declare export function trackPromise<V, R>(promise: Promise<V>, options: TrackOptions<V, R>): TrackResult
-
-declare export function createPromiseTracker<V, R>(
-  options: $Shape<TrackOptions<V, R> & {ignoreOldPromises: boolean}>
-): (promise: Promise<V>, options: $Shape<TrackOptions<V, R>>) => TrackResult
 

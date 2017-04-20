@@ -4,12 +4,8 @@
 
 import {describe, it, beforeEach, afterEach} from 'mocha'
 import {expect} from 'chai'
-import {createStore, bindActionCreators} from 'redux'
-import {
-  promiseReducer, promiseActionCreators, trackPromise, createPromiseTracker,
-  SET_PENDING, RESOLVE, REJECT,
-  initialPromiseState,
-} from '../src'
+import {createStore} from 'redux'
+import create, {SET_PENDING, RESOLVE, REJECT, initialPromiseState} from '../src'
 import sinon from 'sinon'
 
 let clock
@@ -37,11 +33,10 @@ describe('without typePrefix', () => {
         reason: null,
         value: 42,
       }
-      expect(promiseReducer()(state, {type: 'blah'})).to.deep.equal(state)
+      expect(create().reducer(state, {type: 'blah'})).to.deep.equal(state)
     })
     it('works on undefined state', () => {
-      const reducer = promiseReducer()
-      const {setPending, resolve, reject} = promiseActionCreators()
+      const {reducer, setPending, resolve, reject} = create()
 
       expect(reducer(undefined, {type: 'blah'})).to.deep.equal({
         pending: false,
@@ -80,8 +75,8 @@ describe('without typePrefix', () => {
   })
 })
 
-describe('with cutomizeActionType', () => {
-  describe('promiseReducer', () => {
+describe('with customizeActionType', () => {
+  describe('reducer', () => {
     it("ignores irrelevant actions", () => {
       const state = {
         pending: false,
@@ -90,13 +85,11 @@ describe('with cutomizeActionType', () => {
         reason: null,
         value: 42,
       }
-      const actionCreators = promiseActionCreators(actionType => `@@test/${actionType}`)
-      expect(promiseReducer(actionCreators)(state, {type: '@@test/blah'})).to.deep.equal(state)
+      const {reducer} = create(actionType => `@@test/${actionType}`)
+      expect(reducer(state, {type: '@@test/blah'})).to.deep.equal(state)
     })
     it('works on undefined state', () => {
-      const actions = promiseActionCreators(actionType => `@@test/${actionType}`)
-      const reducer = promiseReducer(actions)
-      const {setPending, resolve, reject} = actions
+      const {reducer, setPending, resolve, reject} = create(actionType => `@@test/${actionType}`)
 
       expect(reducer(undefined, setPending())).to.deep.equal({
         pending: true,
@@ -127,14 +120,16 @@ describe('with cutomizeActionType', () => {
   })
 })
 
-describe('trackPromise', () => {
-  it("assumes actions are bound when dispatch isn't given", (done) => {
-    const {dispatch, getState} = createStore(promiseReducer())
-    const actionCreators = bindActionCreators(promiseActionCreators(), dispatch)
+describe('track', () => {
+  it('works when most recent promise resolves', (done) => {
+    const {track, reducer} = create()
+    const {dispatch, getState} = createStore(reducer)
 
-    const promise = new Promise(resolve => setTimeout(() => resolve(1), 1000))
+    const promise1 = new Promise(resolve => setTimeout(() => resolve(1), 1000))
+    const promise2 = new Promise(resolve => setTimeout(() => resolve(2), 500))
 
-    trackPromise(promise, {actionCreators})
+    track(promise1, dispatch)
+    track(promise2, dispatch)
 
     expect(getState()).to.deep.equal({
       pending: true,
@@ -151,82 +146,44 @@ describe('trackPromise', () => {
         pending: false,
         fulfilled: true,
         rejected: false,
-        value: 1,
+        value: 2,
         reason: null,
       })
       done()
     })
   })
-})
+  it('works when most recent promise rejects', (done) => {
+    const {track, reducer} = create()
+    const {dispatch, getState} = createStore(reducer)
 
-describe('createPromiseTracker', () => {
-  describe('with ignoreOldPromises', () => {
-    it('works when most recent promise resolves', (done) => {
-      const {dispatch, getState} = createStore(promiseReducer())
-      const actionCreators = promiseActionCreators()
+    const oldError = new Error("old error")
+    const reason = new Error("TEST")
 
-      const promise1 = new Promise(resolve => setTimeout(() => resolve(1), 1000))
-      const promise2 = new Promise(resolve => setTimeout(() => resolve(2), 500))
+    const promise1 = new Promise((resolve, reject) => setTimeout(() => reject(oldError), 1000))
+    const promise2 = new Promise((resolve, reject) => setTimeout(() => reject(reason), 500))
 
-      const trackPromise = createPromiseTracker({dispatch, actionCreators, ignoreOldPromises: true})
-      trackPromise(promise1)
-      trackPromise(promise2)
+    track(promise1, dispatch)
+    track(promise2, dispatch)
 
-      expect(getState()).to.deep.equal({
-        pending: true,
-        fulfilled: false,
-        rejected: false,
-        value: null,
-        reason: null,
-      })
-
-      clock.tick(2000)
-
-      setImmediate(() => {
-        expect(getState()).to.deep.equal({
-          pending: false,
-          fulfilled: true,
-          rejected: false,
-          value: 2,
-          reason: null,
-        })
-        done()
-      })
+    expect(getState()).to.deep.equal({
+      pending: true,
+      fulfilled: false,
+      rejected: false,
+      value: null,
+      reason: null,
     })
-    it('works when most recent promise rejects', (done) => {
-      const {dispatch, getState} = createStore(promiseReducer())
-      const actionCreators = promiseActionCreators()
 
-      const oldError = new Error("old error")
-      const reason = new Error("TEST")
+    clock.tick(2000)
 
-      const promise1 = new Promise((resolve, reject) => setTimeout(() => reject(oldError), 1000))
-      const promise2 = new Promise((resolve, reject) => setTimeout(() => reject(reason), 500))
-
-      const trackPromise = createPromiseTracker({dispatch, actionCreators, ignoreOldPromises: true})
-      trackPromise(promise1)
-      trackPromise(promise2)
-
+    setImmediate(() => {
       expect(getState()).to.deep.equal({
-        pending: true,
+        pending: false,
         fulfilled: false,
-        rejected: false,
+        rejected: true,
         value: null,
-        reason: null,
+        reason,
       })
-
-      clock.tick(2000)
-
-      setImmediate(() => {
-        expect(getState()).to.deep.equal({
-          pending: false,
-          fulfilled: false,
-          rejected: true,
-          value: null,
-          reason,
-        })
-        done()
-      })
+      done()
     })
   })
 })
@@ -239,29 +196,28 @@ describe('renaming everything for subscriptions', () => {
       [REJECT]: 'SET_STOPPED',
     }
 
-    function subscriptionActionCreators(customizeActionType = actionType => actionType) {
-      const {setPending, resolve, reject} = promiseActionCreators(
+    function createTrackSubscriptionPromise(customizeActionType = actionType => actionType) {
+      const {setPending, resolve, reject, track, reducer} = create(
         actionType => customizeActionType(subscriptionActionTypes[actionType])
       )
-      return {setInitializing: setPending, setReady: resolve, setStopped: reject}
-    }
-
-    function subscriptionReducer(actions) {
-      const {setInitializing, setReady, setStopped} = actions
-      const wrappedReducer = promiseReducer({setPending: setInitializing, resolve: setReady, reject: setStopped})
-      return (state, action) => {
-        const {pending, fulfilled, rejected, reason} = wrappedReducer(state, action)
-        return {
-          initializing: pending,
-          ready: fulfilled,
-          stopped: rejected,
-          error: reason,
-        }
+      return {
+        setInitializing: setPending,
+        setReady: resolve,
+        setStopped: reject,
+        track,
+        reducer: (state, action) => {
+          const {pending, fulfilled, rejected, reason} = reducer(state, action)
+          return {
+            initializing: pending,
+            ready: fulfilled,
+            stopped: rejected,
+            error: reason,
+          }
+        },
       }
     }
 
-    const actionCreators = subscriptionActionCreators(actionType => `@@test/${actionType}`)
-    const {setInitializing, setReady, setStopped} = actionCreators
+    const {setInitializing, setReady, setStopped, reducer} = createTrackSubscriptionPromise(actionType => `@@test/${actionType}`)
 
     expect(setInitializing()).to.deep.equal({
       type: '@@test/SET_INITIALIZING',
@@ -276,8 +232,6 @@ describe('renaming everything for subscriptions', () => {
       error: true,
       payload: 'failure!',
     })
-
-    const reducer = subscriptionReducer(actionCreators)
 
     expect(reducer(undefined, {type: 'blah'})).to.deep.equal({
       initializing: false,
