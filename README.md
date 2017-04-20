@@ -13,6 +13,43 @@ method that takes a `Promise` and dispatches those actions when the promise stat
 I used to write a lot of similar reducers and action creators for keeping track of asynchronous operations, but I got
 tired of repeating myself and wrote this library to use in all of those cases.
 
+## TL;DR
+
+Let's say you want to keep track of the status of an HTTPS login request in redux.  Here's all it takes to set that
+up:
+```js
+import {createStore, combineReducers} from 'redux'
+import {promiseActionCreators, promiseReducer, createPromiseTracker} from 'redux-track-promise'
+import popsicle from 'popsicle'
+
+const loginPromiseActionCreators = promiseActionCreators(actionType => `LOGIN_PROMISE.${actionType})
+
+const reducer = combineReducers({
+  loginPromise: promiseReducer(loginPromiseActionCreators)
+})
+const store = createStore(reducer)
+
+const trackLoginPromise = createPromiseTracker({
+  dispatch: store.dispatch,
+  actionCreators: loginPromiseActionCreators,
+})
+
+trackLoginPromise(popsicle.post('/login', {username: 'jimbob', password: 'trump2024'}))
+```
+
+Then displaying the status of the login request is easy!
+```js
+import React from 'react'
+import {connect} from 'react-redux'
+
+const LoginStatus = connect(state => state.loginPromise)(({pending, fulfilled, rejected, reason}) => {
+  if (pending) return <div className="alert alert-info"><span className="spinner"> Logging in...</div>
+  if (fulfilled) return <div className="alert alert-success">Logged in!</div>
+  if (rejected) return <div className="alert alert-danger">Login failed: {reason.message}</div>
+  return <span />
+})
+```
+
 ## Getting started
 
 ### `npm install redux-track-promise`
@@ -189,7 +226,7 @@ function setPassword(username, oldPassword, newPassword) {
 ## The fourth (initial) state
 
 Unlike promises, which can be in one of three states (pending, fulfilled, or rejected), the initial redux state can be
-none of the above:
+none of the above.  You can think of this as the "no promise" state.
 ```js
 {
   pending: false,
