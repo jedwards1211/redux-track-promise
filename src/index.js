@@ -17,7 +17,12 @@ export default function createReduxTrackPromise(customizeActionType = actionType
     dispatch(setPending())
     return promise.then(
       value => { if (currentPromise === promise) dispatch(resolve(value)) },
-      reason => { if (currentPromise === promise) dispatch(reject(reason)) }
+      reason => {
+        if (currentPromise === promise) {
+          dispatch(reject(reason))
+          throw reason
+        }
+      }
     )
   }
   const reducer = (state, action) => {
