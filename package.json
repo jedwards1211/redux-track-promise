@@ -70,7 +70,7 @@
     "chai": "^3.5.0",
     "copy": "^0.3.0",
     "coveralls": "^2.11.16",
-    "eslint": "^3.13.1",
+    "eslint": "^4.10.0",
     "eslint-plugin-flowtype": "^2.30.0",
     "eslint-watch": "^3.0.0",
     "flow-bin": "^0.56.0",
