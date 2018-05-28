@@ -1,5 +1,4 @@
 // @flow
-
 /* eslint-disable flowtype/require-parameter-type, flowtype/require-return-type */
 
 import {describe, it, beforeEach, afterEach} from 'mocha'

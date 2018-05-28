@@ -1,9 +1,7 @@
 # redux-track-promise
 
-[![Greenkeeper badge](https://badges.greenkeeper.io/jedwards1211/redux-track-promise.svg)](https://greenkeeper.io/)
-
 [![Build Status](https://travis-ci.org/jedwards1211/redux-track-promise.svg?branch=master)](https://travis-ci.org/jedwards1211/redux-track-promise)
-[![Coverage Status](https://coveralls.io/repos/github/jedwards1211/redux-track-promise/badge.svg?branch=master)](https://coveralls.io/github/jedwards1211/redux-track-promise?branch=master)
+[![Coverage Status](https://codecov.io/gh/jedwards1211/redux-track-promise/branch/master/graph/badge.svg)](https://codecov.io/gh/jedwards1211/redux-track-promise)
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
 
@@ -81,6 +79,7 @@ const LoginStatus = connect(state => state.loginPromise)(PromiseStatus({
   rejected: 'Login failed: ',
 }))
 
+<<<<<<< HEAD
 const LoginView = connect(state => state.loginView)(({username, password, dispatch}) => (
   <form
       onSubmit={e => {
@@ -237,4 +236,3 @@ dispatch(setReady())
 
 // now state is {initializing: false, ready: true, stopped: false, error: null}
 ```
-
